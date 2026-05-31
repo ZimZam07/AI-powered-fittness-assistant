@@ -104,7 +104,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email.trim(),
       password: data.password,
-      options: { emailRedirectTo: redirectUrl },
+      options: {
+        emailRedirectTo: redirectUrl,
+        // Profile fields are passed as user metadata; a database trigger
+        // (handle_new_user) reads these and creates the profiles row using
+        // SECURITY DEFINER privileges. This avoids needing an authenticated
+        // session before the profile row exists (which fails RLS when email
+        // confirmation is required).
+        data: {
+          username: data.username.trim(),
+          name: data.name.trim(),
+          age: data.age,
+          gender: data.gender,
+          height_cm: data.height_cm,
+          weight_kg: data.weight_kg,
+          goal: data.goal,
+          workout_level: data.workout_level,
+          activity_level: data.activity_level,
+          workout_place: data.workout_level === "advanced" ? "gym" : "home",
+        },
+      },
     });
 
     if (error) {
@@ -115,29 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return error.message;
     }
 
-    const userId = signUpData.user?.id;
-    if (!userId) return "Signup failed. Please try again.";
-
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: userId,
-      username: data.username.trim(),
-      name: data.name.trim(),
-      age: data.age,
-      gender: data.gender,
-      height_cm: data.height_cm,
-      weight_kg: data.weight_kg,
-      goal: data.goal,
-      workout_level: data.workout_level,
-      activity_level: data.activity_level,
-      workout_place: data.workout_level === "advanced" ? "gym" : "home",
-    });
-
-    if (profileError) {
-      if (profileError.message.toLowerCase().includes("duplicate") || profileError.code === "23505") {
-        return "Username already taken.";
-      }
-      return profileError.message;
-    }
+    if (!signUpData.user?.id) return "Signup failed. Please try again.";
 
     // If session was created (auto-confirm on), sign out so user verifies first
     if (signUpData.session) await supabase.auth.signOut();
