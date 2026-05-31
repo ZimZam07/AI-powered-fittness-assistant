@@ -9,7 +9,7 @@ const FitnessReport = () => {
   const { profile } = useAuth();
 
   const report = useMemo(() => {
-    if (!profile || !profile.profile_complete) return null;
+    if (!profile) return null;
     const bmi = getBMI(profile.weight_kg!, profile.height_cm!);
     const bmiStatus = getBMIStatus(bmi);
     const calories = getCalories(profile.age!, profile.gender!, profile.height_cm!, profile.weight_kg!, profile.activity_level!, profile.goal!);

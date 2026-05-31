@@ -20,7 +20,7 @@ const QuickAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const handleCommand = (cmd: string) => {
-    if (!profile || !profile.profile_complete) return;
+    if (!profile) return;
 
     const user = {
       id: profile.id, name: profile.name, age: profile.age!, gender: profile.gender as "male" | "female",
