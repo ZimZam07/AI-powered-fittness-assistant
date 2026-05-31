@@ -17,34 +17,38 @@ const CreateAccount = ({ onSwitchToLogin }: CreateAccountProps) => {
   const { createAccount } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    name: "",
-    userId: "",
-    password: "",
-    age: "",
-    gender: "",
-    height_cm: "",
-    weight_kg: "",
-    goal: "",
-    workout_level: "",
-    activity_level: "",
+    name: "", username: "", email: "", password: "",
+    age: "", gender: "", height_cm: "", weight_kg: "",
+    goal: "", workout_level: "", activity_level: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.userId || !form.password || !form.age || !form.gender ||
-        !form.height_cm || !form.weight_kg || !form.goal || !form.workout_level || !form.activity_level) {
-      toast({ title: "Missing fields", description: "Please fill all fields", variant: "destructive" });
+    const required = Object.entries(form);
+    for (const [k, v] of required) {
+      if (!String(v).trim()) {
+        toast({ title: "Missing fields", description: "Please fill all fields", variant: "destructive" });
+        return;
+      }
+    }
+    if (form.password.length < 6) {
+      toast({ title: "Password too short", description: "Password must be at least 6 characters", variant: "destructive" });
       return;
     }
-    if (form.password.length < 4) {
-      toast({ title: "Password too short", description: "Password must be at least 4 characters", variant: "destructive" });
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(form.username)) {
+      toast({ title: "Invalid username", description: "3-20 chars, letters/numbers/underscore only", variant: "destructive" });
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+      toast({ title: "Invalid email", variant: "destructive" });
       return;
     }
     setLoading(true);
     const data: CreateAccountData = {
-      name: form.name.trim(),
-      userId: form.userId.trim(),
+      username: form.username.trim(),
+      email: form.email.trim(),
       password: form.password,
+      name: form.name.trim(),
       age: parseInt(form.age),
       gender: form.gender,
       height_cm: parseFloat(form.height_cm),
@@ -53,12 +57,12 @@ const CreateAccount = ({ onSwitchToLogin }: CreateAccountProps) => {
       workout_level: form.workout_level,
       activity_level: form.activity_level,
     };
-    const error = createAccount(data);
+    const error = await createAccount(data);
     setLoading(false);
     if (error) {
       toast({ title: error, variant: "destructive" });
     } else {
-      onSwitchToLogin("Account created successfully. Please login.");
+      onSwitchToLogin("Verification email sent. Please verify your email, then login.");
     }
   };
 
@@ -69,21 +73,25 @@ const CreateAccount = ({ onSwitchToLogin }: CreateAccountProps) => {
           <CardTitle className="flex items-center gap-2 text-lg">
             <UserPlus className="h-5 w-5 text-primary" /> Create Account
           </CardTitle>
-          <p className="text-sm text-muted-foreground">Fill in your details to get personalized fitness guidance</p>
+          <p className="text-sm text-muted-foreground">Your account works across all your devices</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>Name</Label>
+              <Label>Full Name</Label>
               <Input placeholder="Your full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>User ID</Label>
-              <Input placeholder="Choose a unique user ID" value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })} autoComplete="username" />
+              <Label>Username</Label>
+              <Input placeholder="Unique username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} autoComplete="username" />
             </div>
             <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" placeholder="you@example.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
               <Label>Password</Label>
-              <Input type="password" placeholder="Choose a password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" />
+              <Input type="password" placeholder="At least 6 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete="new-password" />
             </div>
             <div className="space-y-1.5">
               <Label>Age</Label>
@@ -129,7 +137,7 @@ const CreateAccount = ({ onSwitchToLogin }: CreateAccountProps) => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 sm:col-span-2">
               <Label>Daily Activity Level</Label>
               <Select value={form.activity_level} onValueChange={(v) => setForm({ ...form, activity_level: v })}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>

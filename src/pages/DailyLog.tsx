@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,21 +12,12 @@ import { ClipboardList } from "lucide-react";
 interface LogEntry {
   id: string;
   date: string;
-  weight_kg: number;
-  sleep_hours: number;
-  water_litre: number;
-  workout_minutes: number;
-  calories_burned: number;
-  steps: number;
-}
-
-function getLogs(userId: string): LogEntry[] {
-  const raw = localStorage.getItem(`fitness_logs_${userId}`);
-  return raw ? JSON.parse(raw) : [];
-}
-
-function saveLogs(userId: string, logs: LogEntry[]) {
-  localStorage.setItem(`fitness_logs_${userId}`, JSON.stringify(logs));
+  weight_kg: number | null;
+  sleep_hours: number | null;
+  water_litre: number | null;
+  workout_minutes: number | null;
+  calories_burned: number | null;
+  steps: number | null;
 }
 
 const DailyLog = () => {
@@ -38,28 +30,38 @@ const DailyLog = () => {
     workout_minutes: "", calories_burned: "", steps: "",
   });
 
-  useEffect(() => {
-    if (user) setLogs(getLogs(user.id));
-  }, [user]);
+  const loadLogs = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("daily_logs")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("date", { ascending: false });
+    setLogs((data as LogEntry[]) || []);
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => { loadLogs(); }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    const entry: LogEntry = {
-      id: crypto.randomUUID(),
+    const { error } = await supabase.from("daily_logs").insert({
+      user_id: user.id,
       date: form.date,
-      weight_kg: parseFloat(form.weight_kg),
-      sleep_hours: parseFloat(form.sleep_hours),
-      water_litre: parseFloat(form.water_litre),
-      workout_minutes: parseInt(form.workout_minutes),
-      calories_burned: parseInt(form.calories_burned),
-      steps: parseInt(form.steps),
-    };
-    const updated = [entry, ...logs];
-    saveLogs(user.id, updated);
-    setLogs(updated);
+      weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
+      sleep_hours: form.sleep_hours ? parseFloat(form.sleep_hours) : null,
+      water_litre: form.water_litre ? parseFloat(form.water_litre) : null,
+      workout_minutes: form.workout_minutes ? parseInt(form.workout_minutes) : null,
+      calories_burned: form.calories_burned ? parseInt(form.calories_burned) : null,
+      steps: form.steps ? parseInt(form.steps) : null,
+    });
+    if (error) {
+      toast({ title: "Failed to save", description: error.message, variant: "destructive" });
+      return;
+    }
     toast({ title: "Log added!", description: `Entry for ${form.date} saved.` });
     setForm({ ...form, weight_kg: "", sleep_hours: "", water_litre: "", workout_minutes: "", calories_burned: "", steps: "" });
+    loadLogs();
   };
 
   return (
@@ -105,9 +107,9 @@ const DailyLog = () => {
                 {logs.map((l) => (
                   <TableRow key={l.id}>
                     <TableCell className="text-xs">{l.date}</TableCell>
-                    <TableCell>{l.weight_kg}</TableCell><TableCell>{l.sleep_hours}h</TableCell>
-                    <TableCell>{l.water_litre}L</TableCell><TableCell>{l.workout_minutes}m</TableCell>
-                    <TableCell>{l.calories_burned}</TableCell><TableCell>{l.steps}</TableCell>
+                    <TableCell>{l.weight_kg ?? "-"}</TableCell><TableCell>{l.sleep_hours ?? "-"}h</TableCell>
+                    <TableCell>{l.water_litre ?? "-"}L</TableCell><TableCell>{l.workout_minutes ?? "-"}m</TableCell>
+                    <TableCell>{l.calories_burned ?? "-"}</TableCell><TableCell>{l.steps ?? "-"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

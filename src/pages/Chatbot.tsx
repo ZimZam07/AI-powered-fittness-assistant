@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,9 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 
 type Message = { role: "user" | "assistant"; content: string };
 
-function getLogs(userId: string) {
-  const raw = localStorage.getItem(`fitness_logs_${userId}`);
-  return raw ? JSON.parse(raw) : [];
+async function getLogs(userId: string) {
+  const { data } = await supabase
+    .from("daily_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false })
+    .limit(14);
+  return data || [];
 }
 
 const SUGGESTIONS = [
@@ -45,7 +51,7 @@ const Chatbot = () => {
     setInput("");
     setIsLoading(true);
 
-    const logs = session ? getLogs(session.userId).slice(-14) : [];
+    const logs = session?.user ? await getLogs(session.user.id) : [];
 
     const userContext = {
       profile: profile

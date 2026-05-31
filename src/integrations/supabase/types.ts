@@ -14,13 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_logs: {
+        Row: {
+          calories_burned: number | null
+          created_at: string
+          date: string
+          id: string
+          sleep_hours: number | null
+          steps: number | null
+          user_id: string
+          water_litre: number | null
+          weight_kg: number | null
+          workout_minutes: number | null
+        }
+        Insert: {
+          calories_burned?: number | null
+          created_at?: string
+          date: string
+          id?: string
+          sleep_hours?: number | null
+          steps?: number | null
+          user_id: string
+          water_litre?: number | null
+          weight_kg?: number | null
+          workout_minutes?: number | null
+        }
+        Update: {
+          calories_burned?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          sleep_hours?: number | null
+          steps?: number | null
+          user_id?: string
+          water_litre?: number | null
+          weight_kg?: number | null
+          workout_minutes?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activity_level: string
+          age: number
+          created_at: string
+          gender: string
+          goal: string
+          height_cm: number
+          id: string
+          name: string
+          updated_at: string
+          username: string
+          weight_kg: number
+          workout_level: string
+          workout_place: string
+        }
+        Insert: {
+          activity_level: string
+          age: number
+          created_at?: string
+          gender: string
+          goal: string
+          height_cm: number
+          id: string
+          name: string
+          updated_at?: string
+          username: string
+          weight_kg: number
+          workout_level: string
+          workout_place?: string
+        }
+        Update: {
+          activity_level?: string
+          age?: number
+          created_at?: string
+          gender?: string
+          goal?: string
+          height_cm?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          username?: string
+          weight_kg?: number
+          workout_level?: string
+          workout_place?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      email_for_username: { Args: { _username: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
