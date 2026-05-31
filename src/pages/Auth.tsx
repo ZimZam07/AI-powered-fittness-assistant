@@ -14,23 +14,32 @@ interface AuthProps {
 
 const Auth = ({ onSwitchToSignup, successMessage }: AuthProps) => {
   const { toast } = useToast();
-  const { login } = useAuth();
-  const [userId, setUserId] = useState("");
+  const { login, resetPassword } = useAuth();
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId.trim() || !password.trim()) {
+    if (!identifier.trim() || !password.trim()) {
       toast({ title: "Please fill all fields", variant: "destructive" });
       return;
     }
     setLoading(true);
-    const error = login(userId.trim(), password);
+    const error = await login(identifier.trim(), password);
     setLoading(false);
-    if (error) {
-      toast({ title: error, variant: "destructive" });
+    if (error) toast({ title: error, variant: "destructive" });
+    else toast({ title: "Welcome back." });
+  };
+
+  const handleForgot = async () => {
+    if (!identifier.trim() || !identifier.includes("@")) {
+      toast({ title: "Enter your email above to reset password", variant: "destructive" });
+      return;
     }
+    const error = await resetPassword(identifier.trim());
+    if (error) toast({ title: error, variant: "destructive" });
+    else toast({ title: "Password reset email sent.", description: "Check your inbox." });
   };
 
   return (
@@ -41,7 +50,7 @@ const Auth = ({ onSwitchToSignup, successMessage }: AuthProps) => {
             <Activity className="h-7 w-7 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">AI Powered Fitness Assistant</h1>
-          <p className="text-sm text-muted-foreground">Your personalized fitness journey starts here</p>
+          <p className="text-sm text-muted-foreground">Login from any device with the same account</p>
         </div>
 
         {successMessage && (
@@ -53,18 +62,17 @@ const Auth = ({ onSwitchToSignup, successMessage }: AuthProps) => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <LogIn className="h-4 w-4 text-primary" />
-              Sign In
+              <LogIn className="h-4 w-4 text-primary" /> Sign In
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label>User ID</Label>
+                <Label>Username or Email</Label>
                 <Input
-                  placeholder="Enter your user ID"
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
+                  placeholder="Enter username or email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   autoComplete="username"
                 />
               </div>
@@ -81,16 +89,20 @@ const Auth = ({ onSwitchToSignup, successMessage }: AuthProps) => {
               <Button type="submit" className="w-full gradient-primary border-0 text-primary-foreground" disabled={loading}>
                 {loading ? "Signing in..." : "Login"}
               </Button>
+              <button
+                type="button"
+                onClick={handleForgot}
+                className="text-xs text-muted-foreground hover:text-primary block mx-auto"
+              >
+                Forgot password?
+              </button>
             </form>
           </CardContent>
         </Card>
 
         <p className="text-center text-sm text-muted-foreground">
           New user?{" "}
-          <button
-            onClick={onSwitchToSignup}
-            className="text-primary font-medium hover:underline"
-          >
+          <button onClick={onSwitchToSignup} className="text-primary font-medium hover:underline">
             Create Account
           </button>
         </p>
